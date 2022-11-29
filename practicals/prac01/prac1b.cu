@@ -14,11 +14,10 @@
 // kernel routine
 // 
 
-__global__ void my_first_kernel(float *x)
+__global__ void my_first_kernel(float *x, float* y)
 {
   int tid = threadIdx.x + blockDim.x*blockIdx.x;
-
-  x[tid] = (float) threadIdx.x;
+  x[tid] += y[tid];
 }
 
 
@@ -28,7 +27,7 @@ __global__ void my_first_kernel(float *x)
 
 int main(int argc, const char **argv)
 {
-  float *h_x, *d_x;
+  float *d_x, *d_y;
   int   nblocks, nthreads, nsize, n; 
 
   // initialise card
@@ -42,14 +41,25 @@ int main(int argc, const char **argv)
   nsize    = nblocks*nthreads ;
 
   // allocate memory for array
-  size_t mem_amt = 10'000'000'000 * sizeof(float);
+  size_t mem_amt = nsize * sizeof(float);
 
-  h_x = (float *)malloc(mem_amt);
+  // VLA---this is naughty but I hate mallocs
+  float h_x[nsize], h_y[nsize];
   checkCudaErrors(cudaMalloc((void **)&d_x, mem_amt));
+  checkCudaErrors(cudaMalloc((void **)&d_y, mem_amt));
+
+  // Initialize host vectors
+  for(int i = 0; i < nsize; ++i){
+    h_x[i] = 5 * i - 3;
+    h_y[i] = -2 * i + 4;
+  }
+
+  // Copy host vectors to device
+  checkCudaErrors( cudaMemcpy(d_x,h_x,mem_amt, cudaMemcpyHostToDevice) );
+  checkCudaErrors( cudaMemcpy(d_y,h_y,mem_amt, cudaMemcpyHostToDevice) );
 
   // execute kernel
-  
-  my_first_kernel<<<nblocks,nthreads>>>(d_x);
+  my_first_kernel<<<nblocks,nthreads>>>(d_x, d_y);
   getLastCudaError("my_first_kernel execution failed\n");
 
   // copy back results and print them out
@@ -62,7 +72,6 @@ int main(int argc, const char **argv)
   // free memory 
 
   checkCudaErrors(cudaFree(d_x));
-  free(h_x);
 
   // CUDA exit -- needed to flush printf write buffer
 

@@ -6,9 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-
 #include <helper_cuda.h>
-
 
 //
 // kernel routine
