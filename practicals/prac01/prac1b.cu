@@ -42,9 +42,10 @@ int main(int argc, const char **argv)
   nsize    = nblocks*nthreads ;
 
   // allocate memory for array
+  size_t mem_amt = 10'000'000'000 * sizeof(float);
 
-  h_x = (float *)malloc(nsize*sizeof(float));
-  checkCudaErrors(cudaMalloc((void **)&d_x, nsize*sizeof(float)));
+  h_x = (float *)malloc(mem_amt);
+  checkCudaErrors(cudaMalloc((void **)&d_x, mem_amt));
 
   // execute kernel
   
@@ -53,7 +54,7 @@ int main(int argc, const char **argv)
 
   // copy back results and print them out
 
-  checkCudaErrors( cudaMemcpy(h_x,d_x,nsize*sizeof(float),
+  checkCudaErrors( cudaMemcpy(h_x,d_x,mem_amt,
                  cudaMemcpyDeviceToHost) );
 
   for (n=0; n<nsize; n++) printf(" n,  x  =  %d  %f \n",n,h_x[n]);
